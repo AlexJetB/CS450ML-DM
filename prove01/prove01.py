@@ -68,17 +68,17 @@ data_train, data_test, targets_train, targets_test = train_test_split(data, targ
                  test_size=0.3)
 
 #### Sklearn example ###
-#clf = GaussianNB()
-#clf.fit(data_train, targets_train)
-#
-#targets_predicted = clf.predict(data_test)
-#
-#print(targets_predicted)
-#print(targets_test)
-#
-## Measure accuracy of fit
-#accuracy = accuracy_score(targets_test, targets_predicted)
-#print(accuracy)
+clf = GaussianNB()
+clf.fit(data_train, targets_train)
+
+targets_predicted = clf.predict(data_test)
+
+print(targets_predicted)
+print(targets_test)
+
+# Measure accuracy of fit
+accuracy = accuracy_score(targets_test, targets_predicted)
+print(accuracy)
 
 ### 'Custom' Classifier ###
 clf = HardCodedClassifier()

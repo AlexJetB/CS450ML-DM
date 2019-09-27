@@ -76,14 +76,14 @@ def k_Nearest_Neighbor(k,data,targets,inputs):
         # Sort the nearest neighbors from closest to furthest
         indices = np.argsort(distances, axis=0)
 
-        classes = np.unique(targets[indices[:k]])
+        classes = np.unique(targets[indices[:k]]) # Enumerate our classes
         if len(classes)==1:
-            closest[n] = np.unique(classes)
+            closest[n] = np.unique(classes) # All of the same class
         else:
             counts = np.zeros(max(classes)+1)
             for i in range(k):
                 counts[targets[indices[i]]] += 1
-            closest[n] = np.max(counts)
+            closest[n] = np.max(counts) # Classify according to the most counted class
 
     return closest
 

@@ -144,8 +144,6 @@ result = k_Nearest_Neighbor(k, data_train, targets_train, data_test)
 
 print(result)
 accuracy = accuracy_score(targets_test, result)
-<<<<<<< HEAD
 print("CUSTOM Accuracy of: ", accuracy, " for k=", k)
-=======
 print("Accuracy of: ", accuracy, " for k=", k)
->>>>>>> 7067ff5b07b993fc7f8a2ad7edf399281bcb008a
+

@@ -16,7 +16,7 @@ Created on Thu Sep 19 11:10:09 2019
 ###################
 
 import numpy as np
-import csv
+#import csv
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
@@ -29,7 +29,7 @@ from sklearn.neighbors import KNeighborsClassifier
 #
 #print(txtArr)
 #
-#### For CSV files ###
+### For CSV files ###
 #with open("files/csvFile.csv") as csvfile:
 #    readCSV = csv.reader(csvfile, delimiter=',')
 #    csvArr = []
@@ -129,41 +129,19 @@ print(targets_test)
 accuracy = accuracy_score(targets_test, targets_predicted)
 print(accuracy)
 
+k=3
 ### kNN alg from sklearn and prove02 instructions
-classifier = KNeighborsClassifier(n_neighbors=3)
+classifier = KNeighborsClassifier(n_neighbors=k)
 classifier.fit(data_train, targets_train)
 predictions = classifier.predict(data_test)
 print(predictions)
 
 accuracy = accuracy_score(targets_test, predictions)
-print(accuracy)
+print("SKLearn Accuracy of:", accuracy, "for k=", k)
 
 ### my own kNN alg ###
-k=3
 result = k_Nearest_Neighbor(k, data_train, targets_train, data_test)
 
 print(result)
 accuracy = accuracy_score(targets_test, result)
-print("Accuracy of: ", accuracy, " for k=", k)
-
-k=5
-result = k_Nearest_Neighbor(k, data_train, targets_train, data_test)
-
-print(result)
-accuracy = accuracy_score(targets_test, result)
-print("Accuracy of: ", accuracy, " for k=", k)
-
-
-k=20
-result = k_Nearest_Neighbor(k, data_train, targets_train, data_test)
-
-print(result)
-accuracy = accuracy_score(targets_test, result)
-print("Accuracy of: ", accuracy, " for k=", k)
-
-k=30
-result = k_Nearest_Neighbor(k, data_train, targets_train, data_test)
-
-print(result)
-accuracy = accuracy_score(targets_test, result)
-print("Accuracy of: ", accuracy, " for k=", k)
+print("CUSTOM Accuracy of: ", accuracy, " for k=", k)

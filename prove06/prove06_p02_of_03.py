@@ -36,6 +36,7 @@ class Node_Network:
     num_outputs = 0
     maxHeight = 0
     learning_rate = 0.0
+    layerPattern = np.empty(1)
     # A node numpy matrix is created with a specified number of layers
     # (length/columns) and a specified number of inputs (height/rows)
     def __init__(self,num_inputs=2,num_layers=1,learning_rate=0.1,max_height=2,
@@ -48,11 +49,11 @@ class Node_Network:
         self.num_outputs = num_outputs
         #Generate our random weights...
         weights = np.random.uniform(-1,0,(max_height,max_height,max_height))
-        layerPattern = np.random.randint(1, max_height, num_layers)
+        self.layerPattern = np.random.randint(1, max_height, num_layers)
 #        print(weights)
         # Construct empty jagged array
         self.nodeArray.append([dict()]*(num_inputs+1))
-        with (np.nditer(layerPattern, flags=['c_index', 'multi_index'])) as it:
+        with (np.nditer(self.layerPattern, flags=['c_index', 'multi_index'])) as it:
             for layer in it:
                 blank_hidden = [dict()]*(layer.item()+1)
                 self.nodeArray.append(blank_hidden)
@@ -67,14 +68,14 @@ class Node_Network:
             for node in layer:
                 print(node)
                 if i_ind==totalLayers:
-                    outputs=[]
+                    outputs=[0]*1
                     weight = []
-                if i_ind>=totalLayers-1:
+                if i_ind==totalLayers-1:
                     outputs =[0]*num_outputs
                     weight = weights[i_ind][j_ind][:num_outputs]
-                else:
-                    outputs=[0]*layerPattern[i_ind]
-                    weight = weights[i_ind][j_ind][:layerPattern[i_ind]]
+                if i_ind<totalLayers-1:
+                    outputs=[0]*self.layerPattern[i_ind]
+                    weight = list(weights[i_ind][j_ind][:self.layerPattern[i_ind]])
 
                 if j_ind==0:
                     self.nodeArray[i_ind][j_ind] = {'bias':True,

@@ -1,32 +1,12 @@
 """
 author: Alex Baker @alexjetb
 program: Neural network nodes.
-Description: Part 01 of 03 for the implementation of a neural network
+Description: Part 02 of 03 for the implementation of a neural network
              as set in Weeks 06-08 of CS450
 """
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import math
-
-# May remove, good reference for now
-#class Node:
-#    weight = 0.0 # Some small random number
-#    input = 0     # Some given input default=0
-#    bias = False
-#
-#    # Create node with given random weight
-#    def __init__(self, bias=False, weight=0):
-#        self.weight=weight
-#        if (bias==True):
-#            self.set_input(-1)
-#            self.bias=True
-#
-#    def set_input(self, input):
-#        self.input = input
-#
-#    # Consider several inputs using alg in future
-#    def set_weight(self, weight):
-#        self.weight = weight
 
 class Node_Network:
     nodeArray = [] # empty list
@@ -37,7 +17,7 @@ class Node_Network:
     maxHeight = 0
     learning_rate = 0.0
     layerPattern = np.empty(1)
-    # A node numpy matrix is created with a specified number of layers
+    # A jagged matrix is created with a specified number of layers, and desired height
     # (length/columns) and a specified number of inputs (height/rows)
     def __init__(self,num_inputs=2,num_layers=1,learning_rate=0.1,max_height=2,
                  num_outputs=2):
@@ -49,26 +29,29 @@ class Node_Network:
         self.num_outputs = num_outputs
         #Generate our random weights...
         weights = np.random.uniform(-1,0,(max_height,max_height,max_height))
-        self.layerPattern = np.random.randint(1, max_height, num_layers)
+        if max_height<1:
+            print("Must have max_height=>1!")
+            return
+        else:
+            self.layerPattern = np.random.randint(1, max_height, num_layers)
 #        print(weights)
         # Construct empty jagged array
         self.nodeArray.append([dict()]*(num_inputs+1))
         with (np.nditer(self.layerPattern, flags=['c_index', 'multi_index'])) as it:
             for layer in it:
-                blank_hidden = [dict()]*(layer.item()+1)
+                blank_hidden = [dict()]*(layer.item()+1) # Account for bias node
                 self.nodeArray.append(blank_hidden)
         self.nodeArray.append([dict()]*num_outputs)
         # Build each layer and initialize each node, including biases
         i_ind = 0
         totalLayers = len(self.nodeArray)-1
         for layer in self.nodeArray:
-            j_ind = 0
-            width = len(layer)-1
-            print(width)
+            j_ind=0
+#            width=len(layer)-1
+#            print(width)
             for node in layer:
-                print(node)
                 if i_ind==totalLayers:
-                    outputs=[0]*1
+                    outputs=0
                     weight = []
                 if i_ind==totalLayers-1:
                     outputs =[0]*num_outputs
@@ -77,27 +60,66 @@ class Node_Network:
                     outputs=[0]*self.layerPattern[i_ind]
                     weight = list(weights[i_ind][j_ind][:self.layerPattern[i_ind]])
 
-                if j_ind==0:
+                if j_ind==0 and i_ind!=totalLayers:
                     self.nodeArray[i_ind][j_ind] = {'bias':True,
                                                     'input':-1,
                                                     'weights':weight,
-                                                    'outputs':outputs}
+                                                    'outputs':outputs,
+                                                    'error':None}
                 else:
                     self.nodeArray[i_ind][j_ind] = {'bias':False,
                                                     'input':0,
                                                     'weights':weight,
-                                                    'outputs':outputs}
+                                                    'outputs':outputs,
+                                                    'error':0}
                 j_ind+=1
             i_ind+=1
 
     # "Fitting" function for neural network
-    def train(self, num_times=1):
-#        self.predictOne()
-        print("Training!")
+    def train(self,num_times=1,dataTrain=np.array([]),targetTrain=np.array([])):
+        # Data and targets must be numpy arrays
+        while num_times>0:
+            i_ind=0
+            for instance in dataTrain:
+                targets = targetTrain[i_ind]
+                result,output = self.predictOne(instance,targets)
+                if result==False:
+                    self.back_propagate(targets)
+                    i_ind+=1
+                    print("Training!")
+                num_times-=1
+
+    def back_propagate(self,targets):
+        # Reverse list to backprop
+        width=len(self.nodeArray)-1
+        i_ind=width
+        for layer in reversed(self.nodeArray):
+            j_ind=0
+            for node in layer:
+                if i_ind==width: #Output error calculation
+                    output=node['outputs']
+                    target=targets[j_ind]
+                    error = output*(1-output)*-(output-target)
+                    node['error'] = error
+                if i_ind<width:
+                    output=node['outputs']
+                    n_input=node['input']
+                    weights=node['weights']
+                    sum_of_wts=0
+                    k_ind=0
+                    for weight in weights:
+                        i_err=self.nodeArray[i_ind+1][k_ind]['error']
+                        sum_of_wts+=weight*i_err
+                        k_ind+=1
+                    node['error']=n_input*(1-n_input)*sum_of_wts
+                j_ind+=1
+            i_ind-=1
+        print("BACK PROP!")
 
     # Predict a row
+    # Weights are initialized separate from list, no need to indicate training
     def predictOne(self, dataTest=np.array([]), targetTest=np.array([])):
-        if dataTest.size-1!=self.num_inputs: #temp workaround, off by 1 due to bias
+        if dataTest.size!=self.num_inputs:
             print('dataTest num of inputs must equal num_inputs!')
             return
         if dataTest.size==0:
@@ -106,40 +128,53 @@ class Node_Network:
         if targetTest.size==0:
             print('No targets were given! Accuracy will not be predicted')
 
-        # Initialize inputs
-        with np.nditer(self.nodeArray[:,0], flags=['c_index', 'refs_ok'],
-                       op_flags=['readwrite']) as it:
-            for node in it:
-                if(node.item()['bias']!=True):
-                    index = it.index
-#                    print(it.multi_index)
-                    node.item()['input']=dataTest[index]
+        # Initialize inputsnet
+        j_ind=0
+        for in_node in self.nodeArray[0]:
+            if in_node['bias']!=True:
+                in_node['input']=dataTest[j_ind]
+                j_ind+=1
 
-        with np.nditer(self.nodeArray, flags=['multi_index', 'refs_ok'],
-                       op_flags=['readwrite'], order='F') as it:
-            for node in it:
-                column = it.multi_index[1]
-                row = it.multi_index[0]
-                if column==0:
-                    node.item()['outputs']=node.item()['input']*node.item()['weights']
-                if column>0 and node.item()['bias']==False:
-#                    print("Working!")
-                    nInput = 0;
-                    for pLayNode in self.nodeArray[:,column-1]:
-                        nInput += pLayNode['outputs'][row-1]
-                    nInput = 1 / (1 + math.exp(-nInput))
-                    node.item()['input']=nInput
-                    node.item()['outputs']=node.item()['input']*node.item()['weights']
-                if column>0 and node.item()['bias']==True:
-                    node.item()['outputs'] = node.item()['weights']*node.item()['input']
+        column=0
+        totalLayers = len(self.nodeArray)-1
+        for layer in self.nodeArray:
+            row=0
+            for node in layer:
+                node_wt = node['weights']
+                if column==0 or node['bias']==True:
+                    node['outputs']=[x * node['input'] for x in node_wt]
+                if column>0 and node['bias']==False:
+                    n_input=0
+                    for pre_lay_node in self.nodeArray[column-1]:
+                        n_input += pre_lay_node['outputs'][row-1]
+                    n_input = 1 / (1 + math.exp(-n_input))
+                    node['input']=n_input
+                    node['outputs']=[x * node['input'] for x in node_wt]
+                if column==totalLayers: #single output for output layer
+                    node['outputs'] = node['input']
 
-        outputs = self.nodeArray[0:,self.nodeArray.shape[1]-1]
+                row+=1
+            column+=1
 
-        for output in outputs:
-            print("OUTPUT", output)
+        outputs = []
+        for node_out in self.nodeArray[totalLayers]:
+            outputs.append(node_out['outputs'])
 
-n_net = Node_Network(3,5,0.1,10,4)
+        # Find highest activation value
+        target = max(outputs)
+#        print(target)
+        outputs = [1 if x==target else 0 for x in outputs]
 
-n_net.predictOne(np.array([-1,1,2]))
+        if targetTest.size>0:
+            if list(targetTest)!=outputs:
+                return False,outputs
+            else:
+                return True,outputs
+        else:
+            return outputs
 
-print(n_net.nodeArray)
+n_net = Node_Network(3,3,0.1,10,4)
+
+#result,outputs = n_net.predictOne(np.array([1,2,3]),np.array([0,0,0,1]))
+
+n_net.train(8,np.array([[1,2,3],[1,2,3]]),np.array([[0,0,0,1],[0,1,0,0]]))

@@ -87,7 +87,9 @@ class Node_Network:
                     self.back_propagate(targets)
                     i_ind+=1
                     print("Training!")
+                    print(num_times)
                 num_times-=1
+
 
     def back_propagate(self,targets):
         # Reverse list to backprop
@@ -107,6 +109,8 @@ class Node_Network:
                     weights=node['weights']
                     sum_of_wts=0
                     k_ind=0
+                    if i_ind+1!=width: # Don't account for bias node
+                        k_ind=1
                     for weight in weights:
                         i_err=self.nodeArray[i_ind+1][k_ind]['error']
                         sum_of_wts+=weight*i_err
@@ -114,6 +118,28 @@ class Node_Network:
                     node['error']=n_input*(1-n_input)*sum_of_wts
                 j_ind+=1
             i_ind-=1
+        # Update weights
+        i_ind=0
+        for layer in self.nodeArray:
+            j_ind=0
+            for node in layer:
+                if i_ind==width:
+                    break
+                if i_ind<width:
+                    weights=node['weights']
+                    n_input=node['input']
+                    k_ind=0
+                    l_ind=0
+                    if i_ind+1!=width: # Don't account for bias_node
+                        k_ind=1
+                    for weight in weights:
+                        err=self.nodeArray[i_ind+1][k_ind]['error']
+                        node['weights'][l_ind]=weight-self.learning_rate*err*n_input
+                        k_ind+=1
+                        l_ind+=1
+                j_ind+=1
+            i_ind+=1
+
         print("BACK PROP!")
 
     # Predict a row
@@ -173,8 +199,8 @@ class Node_Network:
         else:
             return outputs
 
-n_net = Node_Network(3,3,0.1,10,4)
+n_net = Node_Network(3,3,0.2,5,4)
 
 #result,outputs = n_net.predictOne(np.array([1,2,3]),np.array([0,0,0,1]))
 
-n_net.train(8,np.array([[1,2,3],[1,2,3]]),np.array([[0,0,0,1],[0,1,0,0]]))
+n_net.train(20,np.array([[1,2,3],[1,2,3]]),np.array([[0,0,0,1],[0,1,0,0]]))
